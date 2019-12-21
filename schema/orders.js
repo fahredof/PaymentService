@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema({
     idPayment: Number,
     cartAuth: String,
-    totalCost: Number,
+    userName: String,
     idOrder: Number
 });
 

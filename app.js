@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 
 const app = express();
 
-const log4js = require('log4js');
+const log4js = require("log4js");
 const logger = log4js.getLogger("server");
 logger.level = 'info';
 

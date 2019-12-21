@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Order = require("../schema/orders");
+const conct = require("./send");
 
 const log4js = require('log4js');
 const logger = log4js.getLogger("server");
@@ -8,12 +9,18 @@ logger.level = 'info';
 
 router.post("/order", (req, res) => {
     if (req.body.idPayment !== undefined && req.body.cartAuth !== undefined
-        && req.body.totalCost !== undefined && req.body.idOrder !== undefined) {
-        if (Number.isInteger(req.body.idPayment) && typeof req.body.totalCost === "number"
-        && Number.isInteger(req.body.idOrder)) {
+        && req.body.idOrder !== undefined) {
+        if (Number.isInteger(req.body.idPayment) && Number.isInteger(req.body.idOrder)) {
             Order.create(req.body)
                 .then((data) => {
                     res.send(data);
+                    let response = {
+                        idPayment: data.idPayment,
+                        cartAuth: data.cartAuth,
+                        userName: data.userName,
+                        idOrder: data.idOrder
+                    };
+                    conct(response);
                 })
                 .catch(error => {
                     logger.info(error);
