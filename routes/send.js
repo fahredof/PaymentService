@@ -10,7 +10,7 @@ function conct(data) {
                 if (error1) {
                     throw error1;
                 }
-                let queue = "StatusQueue";
+                let queue = "paymentStatus";
 
                 channel.assertQueue(queue, {
                     durable: false
@@ -22,7 +22,6 @@ function conct(data) {
 
             setTimeout(function () {
                 connection.close();
-                process.exit(0)
             }, 500);
         })
     );
