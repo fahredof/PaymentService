@@ -9,6 +9,17 @@ const log4js = require("log4js");
 const logger = log4js.getLogger("server");
 logger.level = 'info';
 
+function randomString(length) {
+    let result = '';
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+
+
 async function start() {
     try {
         mongoose.connect("mongodb://localhost/payment-db",
@@ -17,41 +28,39 @@ async function start() {
                 useUnifiedTopology: true,
                 useFindAndModify: false
             });
-        app.listen(4000, () => {
-            logger.info("Server is listening\n")
+        const server = app.listen(0, () => {
+            const port = server.address().port;
+            logger.info(`Server is listening port:${port}\n`);
+            const clientEureka = new Eureka({
+                instance: {
+                    app: 'Payment',
+                    hostName: `Payment:${randomString(32)}`,
+                    ipAddr: '127.0.0.1',
+                    vipAddress: 'Payment',
+                    port: {
+                        '$':port,
+                        '@enabled':true
+                    },
+                    statusPageUrl: `http://localhost:${port}/`,
+                    dataCenterInfo: {
+                        '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+                        name: 'MyOwn',
+                    }
+                },
+                eureka: {
+                    host: 'localhost',
+                    port: 8761,
+                    servicePath: '/eureka/apps'
+                }
+            });
+
+            clientEureka.start(error => {
+                console.log(clientEureka.getInstancesByAppId('Payment')[0]);
+                console.log(error || 'eureka started');
+            });
         });
         app.use(bodyParser.json());
         app.use("/payment", require("./routes/index"));
-
-        const clientEureca = new Eureka({
-
-            instance: {
-                app: 'Payment',
-                ipAddr: '127.0.0.1',
-                vipAddress: 'Payment',
-                dataCenterInfo: {
-                    name: 'MyOwn',
-            },
-
-            port: 8082,
-
-        },
-            eureca: {
-                 serviceUrls:{
-                     default: [
-                         'http://localhost:8085/eureka'
-                     ]
-                 },
-                host: 'http://localhost:',
-                    port: 8085,
-                    servicePath: 'eureca'
-            },
-        });
-
-        clientEureca.start(error => {
-            console.log(error || 'eureca started');
-        });
-
     } catch (error) {
         logger.info(error);
     }
