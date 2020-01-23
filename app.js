@@ -5,6 +5,8 @@ const Eureka = require('eureka-js-client').Eureka;
 
 const app = express();
 
+const PORT = 8080;
+
 const log4js = require("log4js");
 const logger = log4js.getLogger("server");
 logger.level = 'info';
@@ -18,46 +20,46 @@ function randomString(length) {
     }
     return result;
 }
-
+const randomStr = randomString(32);
 
 async function start() {
     try {
-        mongoose.connect("mongodb://localhost/payment-db",
+        mongoose.connect("mongodb://mongo:27017/payment-db",
             {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
                 useFindAndModify: false
             });
-        const server = app.listen(0, () => {
-            const port = server.address().port;
-            logger.info(`Server is listening port:${port}\n`);
+        app.listen(PORT, () => {
+            logger.info(`Server is listening port:${PORT}\n`);
             const clientEureka = new Eureka({
                 instance: {
-                    app: 'Payment',
-                    hostName: `Payment:${randomString(32)}`,
+                    instanceId: `Payment:${randomStr}`,
+                    app: 'PAYMENT',
+                    hostName: `payment`,
                     ipAddr: '127.0.0.1',
                     vipAddress: 'Payment',
                     port: {
-                        '$':port,
+                        '$':PORT,
                         '@enabled':true
                     },
-                    statusPageUrl: `http://localhost:${port}/`,
+                    statusPageUrl: `http://localhost:${PORT}/info`,
                     dataCenterInfo: {
                         '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
                         name: 'MyOwn',
                     }
                 },
                 eureka: {
-                    host: 'localhost',
+                    maxRetries: 20,
+                    requestRetryDelay: 1000,
+                    host: 'eureka',
                     port: 8761,
                     servicePath: '/eureka/apps'
                 }
             });
-
-            clientEureka.start(error => {
-                console.log(clientEureka.getInstancesByAppId('Payment')[0]);
+            setTimeout(() => clientEureka.start(error => {
                 console.log(error || 'eureka started');
-            });
+            }), 15000);
         });
         app.use(bodyParser.json());
         app.use("/payment", require("./routes/index"));
